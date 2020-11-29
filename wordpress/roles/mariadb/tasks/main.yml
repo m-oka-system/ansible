@@ -1,0 +1,9 @@
+---
+# MariaDBインストール前の事前タスク呼び出し
+# - include_tasks: roles/mariadb/tasks/check_install.yml
+
+# MariaDBインストール作業タスクの呼び出し
+# - include_tasks: roles/mariadb/tasks/install.yml
+
+# MariaDB設定作業タスク呼び出し
+- include_tasks: roles/mariadb/tasks/configure.yml

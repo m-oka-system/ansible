@@ -1,0 +1,105 @@
+- name: provisioning
+  hosts: web
+  become: yes
+  vars:
+    hostname: Web01
+    goss_url: https://github.com/aelsabbahy/goss/releases/latest/download/goss-linux-amd64 -o /usr/local/bin/goss
+  tasks:
+    # - name: yum update
+    #   yum:
+    #     name=*
+    #     state=latest
+
+    - name: setup timezone
+      timezone:
+        name: Asia/Tokyo
+
+    - name: check locale status
+      command: localectl status
+      register: localectl_result
+      check_mode: no
+      changed_when: false
+
+    - name: setup locale
+      command: localectl set-locale LANG=ja_JP.utf8
+      when: "'LANG=ja_JP.utf8' not in localectl_result.stdout"
+
+    - name: setup keymap
+      command: localectl set-keymap jp106
+      when: "'jp106' not in localectl_result.stdout"
+
+    - name: "add yum repository for nginx"
+      yum_repository:
+        name: nginx
+        description: "nginx stable repo"
+        file: /etc/yum.repos.d/nginx.repo
+        baseurl: "http://nginx.org/packages/centos/$releasever/$basearch/"
+        gpgcheck: no
+        enabled: yes
+        gpgkey: https://nginx.org/keys/nginx_signing.key
+
+    - name: yum install nginx
+      yum:
+        name: nginx
+        state: installed      # present/installed/latest/absent/removed
+
+    - name: service start
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: disable nginx
+      lineinfile:
+        dest: /etc/selinux/config
+        regexp: "^SELINUX=.*"
+        line: "SELINUX=disabled"
+
+    - name: copy index.html to nginx root directory
+      template:
+        src: ./index.html
+        dest: /usr/share/nginx/html/
+
+    - name: yum install bind-utils
+      yum:
+        name: bind-utils
+        state: installed
+
+    - name: add user
+      user:
+        name: aws_admin
+        password: "{{ 'p@ssw0rd' | password_hash('sha512') }}"
+        state: present
+        update_password: on_create
+
+    - name: allow password authentication
+      lineinfile:
+        dest: /etc/ssh/sshd_config
+        regexp: "^PasswordAuthentication no"
+        line: "PasswordAuthentication yes"
+
+    - name: setup sudoers
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: "{{ item.match }}"
+        line: "{{ item.line }}"
+        validate: '/usr/sbin/visudo -cf %s'
+      with_items:
+        - { match: 'aws_admin', line: 'aws_admin ALL=(ALL) NOPASSWD: ALL' }
+
+    # - name: download goss
+    #   get_url:
+    #     url: "{{ goss_url }}"
+    #     dest: /usr/local/bin/goss
+    #     mode: 0755
+
+    - name: copy goss.yml
+      template:
+        src: ./goss.yml
+        dest: /home/vagrant/goss.yml
+
+    - name: test goss file
+      goss:
+        path: "/home/vagrant/goss.yml"
+        goss_path: "/usr/local/bin/goss"
