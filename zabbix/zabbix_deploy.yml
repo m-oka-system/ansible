@@ -1,0 +1,10 @@
+---
+- name: Deploy Database for Zabbix
+  hosts: db2
+  become: true
+  vars:
+    ansible_sudo_pass: 'ansible'
+  roles:
+    - { role: common, tags: common }
+    - { role: zabbix, tags: zabbix }
+

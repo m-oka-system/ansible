@@ -1,0 +1,41 @@
+---
+# SELinuxの無効化
+- name: configure / SELinux disabled
+  selinux:
+    state: disabled
+  when: ansible_selinux.config_mode == 'enforcing'
+
+# タイムゾーンの設定
+- name: configure / Setup timezone
+  timezone:
+    name: Asia/Tokyo
+
+# 日本語のロケールをインストール
+# - name: install / Install japanese local
+#   shell: sudo yum -y reinstall glibc-common
+
+# 現在のロケール設定を取得
+- name: configure / Check locale status
+  command: localectl status
+  register: localectl_result
+  check_mode: no
+  changed_when: false
+
+# ロケールの設定
+- name: configure / Setup locale
+  command: localectl set-locale LANG=ja_JP.utf8
+  when: "'LANG=ja_JP.utf8' not in localectl_result.stdout"
+
+# キーマップの設定
+- name: configure / Setup keymap
+  command: localectl set-keymap jp106
+  when: "'jp106' not in localectl_result.stdout"
+
+# YUMパッケージのアップデート
+# - name: configure / Update yum packages
+#   yum:
+#     name: '*'
+#     state: latest
+#     update_cache: yes
+
+

@@ -1,0 +1,83 @@
+---
+# Zabbixのリポジトリを登録
+- name: configure / Add yum repository for zabbix
+  yum:
+    name: https://repo.zabbix.com/zabbix/4.0/rhel/7/x86_64/zabbix-release-4.0-1.el7.noarch.rpm
+    state: present
+
+
+# Zabbix関連のパッケージインストール
+- name: install / Install zabbix packages
+  yum:
+    name: "{{ zabbix_packages }}"
+    state: present
+
+# mariadbのサービスを開始
+- name: configure / Enabled and start mariadb
+  service:
+    name: mariadb
+    state: started
+    enabled: yes
+
+# zabbix DB作成
+- name: configure / Create database zabbix
+  mysql_db:
+    name: zabbix
+    encoding: utf8
+    collation: utf8_bin
+    state: present
+
+# zabbix ユーザー作成
+- name: configure / Create zabbix user
+  mysql_user:
+    name: zabbix
+    password: "{{ zabbix_mysql_password }}"
+    priv: 'zabbix.*:ALL,GRANT'
+    state: present
+
+# zabbix DBのユーザー数をチェック
+- name: configure / Check to exist  zabbix table. ignore status is OK.
+  shell: mysql -u root -ss zabbix -e "select count(*) from users"
+  ignore_errors: yes
+  register: count_users
+- debug: var=count_users
+
+# zabbix DBのユーザーが存在しない場合は初期データをインポート
+- name: configure / Import initial data
+  shell: zcat /usr/share/doc/zabbix-server-mysql-4.0.27/create.sql.gz | mysql zabbix -u root
+  when: count_users.rc != 0
+
+# zabbixのDB接続設定
+- name: configure / Modify zabbix_server config
+  lineinfile:
+    path: /etc/zabbix/zabbix_server.conf
+    regex: "{{ item.regex }}"
+    line: "{{ item.line}}"
+  with_items:
+    - { regex: "^# DBHost=", line: "DBHost={{ mysql_db_host }}" }
+    - { regex: "^DBName=", line: "DBName={{ mysql_db_name }}" }
+    - { regex: "^# DBPassword=", line: "DBPassword={{ mysql_db_password }}" }
+  notify:
+    - restart zabbix-server
+
+# httpdのタイムゾーンを設定
+- name: configure / Modify time zone
+  lineinfile:
+    path: /etc/httpd/conf.d/zabbix.conf
+    regex: php_value date.timezone
+    # state: present
+    # insertafter: "# php_value date.timezone"
+    line: "        php_value date.timezone Asia/Tokyo"
+  notify:
+    - restart httpd
+
+- name: restart_zabbix-server
+  service:
+    name: "{{ item }}"
+    state: started
+    # daemon_reload: yes
+    enabled: yes
+  with_items:
+    - zabbix-server
+    - zabbix-agent
+    - httpd

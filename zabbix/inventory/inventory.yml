@@ -1,0 +1,20 @@
+all:
+  hosts:
+    acs:
+      ansible_host: 192.168.10.10
+  children:
+    databases:
+      hosts:
+        db1:
+          ansible_host: 192.168.10.31
+        db2:
+          ansible_host: 192.168.10.32
+    apps:
+      hosts:
+        app1:
+          ansible_host: 192.168.10.21
+        app2:
+          ansible_host: 192.168.10.22
+
+
+

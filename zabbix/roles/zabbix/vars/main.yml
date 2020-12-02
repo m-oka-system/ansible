@@ -1,0 +1,14 @@
+---
+zabbix_packages:
+  - zabbix-server-mysql
+  - zabbix-web-mysql
+  - zabbix-web-japanese
+  - zabbix-agent
+  - zabbix-get
+  - MySQL-python
+  - mariadb-server
+
+zabbix_mysql_password: P@ssw0rd
+mysql_db_host: localhost
+mysql_db_name: zabbix
+mysql_db_password: P@ssw0rd
