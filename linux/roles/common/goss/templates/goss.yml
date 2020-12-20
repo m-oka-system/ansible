@@ -1,0 +1,28 @@
+package:
+  httpd:
+    installed: true
+    versions:
+    - 2.4.6
+  git:
+    installed: true
+    versions:
+    - 1.8.3.1
+user:
+  user01:
+    exists: true
+    uid: 1002
+    gid: 1002
+    groups:
+    - sys
+    - user01
+    home: /home/user01
+    shell: /bin/bash
+  user02:
+    exists: true
+    uid: 1001
+    gid: 1001
+    groups:
+    - users
+    - user02
+    home: /home/user02
+    shell: /bin/bash

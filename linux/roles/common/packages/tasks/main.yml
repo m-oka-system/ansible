@@ -1,0 +1,27 @@
+# (1)ディストリビューションごとのロール変数を読み込み
+- name: Add the OS specific variables
+  include_vars: "{{ ansible_os_family }}.yml"
+
+# - name: debug
+#   debug:
+#     msg: "{{ required_packages }}"
+
+# (2)YUMパッケージのアップデート
+- name: Update yum packages
+  yum:
+    name: ['epel-release', '*']
+    state: latest
+    update_cache: yes
+  when: ansible_os_family == "RedHat"
+
+# (3)APTパッケージのアップデート
+- name: Update apt packages
+  apt:
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+# (4)必要モジュールのインストール
+- name: Install the required packages
+  package:
+    name: "{{ required_packages }}"
+    state: present

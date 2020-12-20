@@ -1,0 +1,21 @@
+# (1)タイムゾーンの設定
+- name: Setup timezone
+  timezone:
+    name: "{{ locale_timezone }}"
+
+# (2)現在のシステムロケールとキーボードマップを取得
+- name: Check locale status
+  command: localectl status
+  register: localectl_result
+  check_mode: no
+  changed_when: false
+
+# (3)システムロケールの設定
+- name: Setup locale
+  command: localectl set-locale LANG={{ locale_locale }}
+  when: "'LANG=ja_JP.utf8' not in localectl_result.stdout"
+
+# (4)キーボードマップの設定
+- name: Setup keymap
+  command: localectl set-keymap {{ locale_keymap }}
+  when: "'jp106' not in localectl_result.stdout"

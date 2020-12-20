@@ -49,7 +49,7 @@
         state: started
         enabled: yes
 
-    - name: disable nginx
+    - name: disable selinux
       lineinfile:
         dest: /etc/selinux/config
         regexp: "^SELINUX=.*"

@@ -1,0 +1,33 @@
+---
+- name: Initialize OS setting for Linux Servers
+  hosts: linux-servers
+  become: true
+  vars:
+    ansible_sudo_pass: 'ansible'
+  roles:
+    - { role: common/locale, tags: locale }      #(1)ロケール管理
+    - { role: common/packages, tags: packages }  #(2)パッケージ管理
+    - { role: common/users, tags: users }        #(3)ユーザー管理
+    - { role: common/networks, tags: net }       #(4)ネットワーク管理
+    - { role: common/resolver, tags: resolver }  #(5)リゾルバ管理
+    - { role: common/times, tags: time }         #(6)時刻管理
+    - { role: common/goss, tags: goss }          #(7)GOSSによるテスト実施
+
+  post_tasks:
+    - name: Restart target nodes
+      shell: >
+            sleep 2 &&
+            shutdown -r now "Ansible initialized"
+      async: 5
+      poll: 0
+      ignore_errors: true
+
+    - name: Waiting for servers to come back
+      local_action:
+        module: wait_for
+        host: "{{ ansible_host }}"
+        port: 22
+        state: started
+        delay: 30
+        timeout: 300
+

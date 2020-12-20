@@ -1,0 +1,16 @@
+---
+- name: download goss
+  get_url:
+    url: "{{ goss_url }}"
+    dest: /usr/local/bin/goss
+    mode: 0755
+
+- name: copy goss.yml
+  template:
+    src: ./goss.yml
+    dest: /home/vagrant/goss.yml
+
+- name: test goss file
+  goss:
+    path: "/home/vagrant/goss.yml"
+    goss_path: "/usr/local/bin/goss"

@@ -1,0 +1,35 @@
+# (1)所属グループの作成
+- name: Create new groups
+  group:
+    name: "{{ item.value.groups }}"
+  with_dict: "{{ user_newusers }}"
+
+# (2)新規ユーザーの作成
+- name: Create new users
+  user:
+    name: "{{ item.key }}"
+    password: "{{ item.value.pass }}"
+    shell: /bin/bash
+    home: "/home/{{ item.key }}"
+    state: present
+    groups: "{{ item.value.groups }}"
+    update_password: on_create
+  with_dict: "{{ user_newusers }}"
+
+# (3)公開鍵の登録
+- name: Disribute authorized key
+  authorized_key:
+    user: "{{ item.key }}"
+    key: "{{ lookup('file', '/home/vagrant/.ssh/authorized_keys') }}"
+  with_dict: "{{ user_newusers }}"
+
+# (4)システム権限の付与
+- name: Deploy temporary sudoers files
+  template:
+    src: "{{ item.value.priv }}_sudoers.j2"
+    dest: "/etc/sudoers.d/{{ item.key }}"
+    owner: root
+    group: root
+    mode: 0400
+    validate: 'visudo -cf %s'
+  with_dict: "{{ user_newusers }}"
